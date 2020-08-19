@@ -28,6 +28,6 @@ RUN pip install -r requirements.txt
 # copy code
 COPY /scrapper.py  /home/ubuntu/CodeMarket/scrapper.py
 COPY /sym_data.py  /home/ubuntu/CodeMarket/sym_data.py
-COPY /symbols.tsv  /home/ubuntu/CodeMarket/symbols.py
+COPY /symbols.tsv  /home/ubuntu/CodeMarket/symbols.tsv
 
 ENTRYPOINT ["python","scrapper.py"]
