@@ -84,7 +84,8 @@ class Scrapper():
     lilist = bussiness_list.findChildren(['li'])
 
     for li in lilist:
-      link = li.find('a',class_='lemon--a__373c0__IEZFH link__373c0__1G70M link-color--inherit__373c0__3dzpk link-size--inherit__373c0__1VFlE')
+      # link = li.find('a',class_='lemon--a__373c0__IEZFH link__373c0__1G70M link-color--inherit__373c0__3dzpk link-size--inherit__373c0__1VFlE')
+      link = li.find('a',class_='lemon--a__373c0__IEZFH link__373c0__1UGBs photo-box-link__373c0__1AMDk link-color--blue-dark__373c0__12C_y link-size--default__373c0__3m55w')
       if link == None:
           continue
       self.driver.get(f"https://www.yelp.com/{link['href']}")

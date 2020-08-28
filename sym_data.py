@@ -9,7 +9,7 @@ class get_codes():
     def replace_sym(self, word):
         word = list(word)
         syms = self.symbols.keys()
-        new_word = ''.join(map(lambda alp: alp if alp not in syms else '%'+ self.symbols[alp][self.code], word))
+        new_word = ''.join(map(lambda alp: alp if alp not in syms else self.symbols[alp][self.code], word))
         return(new_word)
 
 if __name__ == "__main__":
