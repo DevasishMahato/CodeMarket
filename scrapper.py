@@ -29,7 +29,7 @@ class Scrapper():
     for start in range(0, self.limit *10 + 1, 10):
       url = self.get_url(start)    
       # url = f'https://www.yelp.com/search?find_desc=Therapist&find_loc=Los+Angeles%2C+CA&ns=1&start={start}'
-      print(start)
+      print(f'page:{start}')
       self.get_emails(url)
 
   def get_url(self, start=0):
@@ -63,7 +63,7 @@ class Scrapper():
         if link != f"http://{website_link}" and link != f"https://{website_link}" and link != '/' and link != f"http://{website_link}/" and link != f"https://{website_link}/":
           self.internal_links.add(base_url)
           comp_url = f"\rhttp://{website_link}/{base_url}"
-          stdout.write(comp_url)
+          # stdout.write(comp_url)
           try:
             websitepage = get(comp_url)
           except:
@@ -77,67 +77,77 @@ class Scrapper():
   def get_emails(self, url):
     self.driver.get(url)
     html = self.driver.page_source
+    self.flag = 0
+    self.no_email = True
 
     soup = BeautifulSoup(html, 'html.parser')
     page_link_modefied = soup.find_all('a',class_="lemon--a__373c0__IEZFH link__373c0__1G70M pagination-link-component__373c0__9aHoC link-color--inherit__373c0__3dzpk link-size--inherit__373c0__1VFlE")
     bussiness_list = soup.find('ul',class_="lemon--ul__373c0__1_cxs undefined list__373c0__2G8oH")
-    lilist = bussiness_list.findChildren(['li'])
-
-    for li in lilist:
-      # link = li.find('a',class_='lemon--a__373c0__IEZFH link__373c0__1G70M link-color--inherit__373c0__3dzpk link-size--inherit__373c0__1VFlE')
-      link = li.find('a',class_='lemon--a__373c0__IEZFH link__373c0__1UGBs photo-box-link__373c0__1AMDk link-color--blue-dark__373c0__12C_y link-size--default__373c0__3m55w')
-      if link == None:
-          continue
-      self.driver.get(f"https://www.yelp.com/{link['href']}")
-      profile = self.driver.page_source
-      profile_soup = BeautifulSoup(profile, 'html.parser')
-      self.website_link = None
-      business_website = profile_soup.find("p", string="Business website")
-      if business_website != None:
-        business_website_P = business_website.findNext('p')
-        if business_website_P != None:
-          business_website_a = business_website_P.find('a')
-          if business_website_a != None:
-            self.website_link = business_website_a
-      if self.website_link == None:
-          print(f"Link Not Found ----> https://www.yelp.com/{link['href']}")
-          continue
-      print(self.website_link.text)
+        # added loop to try loading webpage
+    while self.flag < 50 and self.no_email:
       try:
-          self.driver.get("http://" + self.website_link.text)
-      except:
-          print("error occurred")
-          continue
-      business_name = link.text
-      site_url = "http://" + self.website_link.text
-      websitepage = self.driver.page_source
-      websiteSoup = BeautifulSoup(websitepage, 'html.parser')
-      new_emails = set(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z0-9\.\-+_]+", websitepage, re.I))
-      self.internal_emails.update(new_emails)
-      self.get_internal_links(websiteSoup, self.website_link.text.replace("http://", "").replace("https://", "").split("/")[0])
-      self.internal_links.clear()
+        lilist = bussiness_list.findChildren(['li'])
 
-      if len(self.internal_emails) == 0:
-          data_dict = {"business_name": business_name,"site_url": site_url,"EmailAddress": "NULL"}
-      else:
-          data_dict = {"business_name": business_name,"site_url": site_url,"EmailAddress": repr(self.internal_emails)}
-      self.search_results = pd.DataFrame()
-      self.search_results = self.search_results.append([data_dict])
-                  
-      try:
-          self.df = pd.read_csv(r'output.csv')
-      except:
-          self.df = pd.DataFrame()
+        for li in lilist:
+          # link = li.find('a',class_='lemon--a__373c0__IEZFH link__373c0__1G70M link-color--inherit__373c0__3dzpk link-size--inherit__373c0__1VFlE')
+          link = li.find('a',class_='lemon--a__373c0__IEZFH link__373c0__1UGBs photo-box-link__373c0__1AMDk link-color--blue-dark__373c0__12C_y link-size--default__373c0__3m55w')
+          if link == None:
+              continue
+          self.driver.get(f"https://www.yelp.com/{link['href']}")
+          profile = self.driver.page_source
+          profile_soup = BeautifulSoup(profile, 'html.parser')
+          self.website_link = None
+          business_website = profile_soup.find("p", string="Business website")
+          if business_website != None:
+            business_website_P = business_website.findNext('p')
+            if business_website_P != None:
+              business_website_a = business_website_P.find('a')
+              if business_website_a != None:
+                self.website_link = business_website_a
+          if self.website_link == None:
+              print(f"Link Not Found ----> https://www.yelp.com/{link['href']}")
+              continue
+          print(self.website_link.text)
+          try:
+              self.driver.get("http://" + self.website_link.text)
+          except:
+              print("error occurred")
+              continue
+          business_name = link.text
+          site_url = "http://" + self.website_link.text
+          websitepage = self.driver.page_source
+          websiteSoup = BeautifulSoup(websitepage, 'html.parser')
+          new_emails = set(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z0-9\.\-+_]+", websitepage, re.I))
+          self.internal_emails.update(new_emails)
+          self.get_internal_links(websiteSoup, self.website_link.text.replace("http://", "").replace("https://", "").split("/")[0])
+          self.internal_links.clear()
 
-      if self.df.empty:
-          path = 'output.csv'
-          result_len = len(self.search_results)
-          if result_len > 0:
-              self.search_results.to_csv(path, index=False, columns=["business_name", "site_url","EmailAddress"])
-      else:
-          self.search_results.to_csv(r'output.csv', index=False, mode='a', header=False, columns=["business_name", "site_url","EmailAddress"])
-      
-      self.internal_emails.clear()
+          if len(self.internal_emails) == 0:
+              data_dict = {"business_name": business_name,"site_url": site_url,"EmailAddress": "NULL"}
+          else:
+              data_dict = {"business_name": business_name,"site_url": site_url,"EmailAddress": repr(self.internal_emails)}
+          self.search_results = pd.DataFrame()
+          self.search_results = self.search_results.append([data_dict])
+                      
+          try:
+              self.df = pd.read_csv(r'output.csv')
+          except:
+              self.df = pd.DataFrame()
+
+          if self.df.empty:
+              path = 'output.csv'
+              result_len = len(self.search_results)
+              if result_len > 0:
+                  self.search_results.to_csv(path, index=False, columns=["business_name", "site_url","EmailAddress"])
+          else:
+              self.search_results.to_csv(r'output.csv', index=False, mode='a', header=False, columns=["business_name", "site_url","EmailAddress"])
+          
+          self.internal_emails.clear()
+
+            # catch block
+      except AttributeError:
+        self.flag += 1
+        print(f"trial:{self.flag}")
 
 
 if __name__ == "__main__":
